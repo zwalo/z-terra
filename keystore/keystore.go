@@ -18,7 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/console/prompt"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/urfave/cli"
-	log "github.com/zwalo/z-nektar/zlog"
+	"github.com/zwalo/z-nektar/zlog"
 	"github.com/zwalo/z-terra/flag"
 )
 
@@ -36,9 +36,9 @@ func Command(ctx *cli.Context) error {
 	var privateKey *ecdsa.PrivateKey
 	var err error
 	isNew := ctx.GlobalBool(flag.NewFlage.Name)
-	log.Head("start generate keystore")
+	zlog.Head("start generate keystore")
 	if isNew {
-		log.Trace("you chose to generate new key")
+		zlog.Trace("you chose to generate new key")
 		privateKey, err = crypto.GenerateKey()
 		if err != nil {
 			return err
@@ -59,15 +59,15 @@ func Command(ctx *cli.Context) error {
 			}
 		}
 
-		log.Debug(fmt.Sprintf("success save new private key file (path : %s)", path))
+		zlog.Debug(fmt.Sprintf("success save new private key file (path : %s)", path))
 	} else {
-		log.Trace("you chose to generate with your private key")
+		zlog.Trace("you chose to generate with your private key")
 		isLoadFile, err := prompt.Stdin.PromptConfirm("Will you load your private key file?")
 		if err != nil {
 			return err
 		}
 		if isLoadFile {
-			log.Trace("you chose to load your private key file")
+			zlog.Trace("you chose to load your private key file")
 		load_file:
 			filePath, err := prompt.Stdin.PromptInput("Enter your private key file path: ")
 			if err != nil {
@@ -75,12 +75,12 @@ func Command(ctx *cli.Context) error {
 			}
 			privateKey, err = crypto.LoadECDSA(filePath)
 			if err != nil {
-				log.Error("Failed to load private key file: %v", err)
+				zlog.Error("Failed to load private key file: %v", err)
 				goto load_file
 			}
-			log.Debug("success load private key file")
+			zlog.Debug("success load private key file")
 		} else {
-			log.Trace("you chose to enter your private key")
+			zlog.Trace("you chose to enter your private key")
 		enter_pk:
 			privateKeyHex, err := prompt.Stdin.PromptInput("Enter your private key (without 0x prefix): ")
 			if err != nil {
@@ -89,11 +89,11 @@ func Command(ctx *cli.Context) error {
 
 			privateKey, err = crypto.HexToECDSA(privateKeyHex)
 			if err != nil {
-				log.Error("Failed to convert private key: %v", err)
+				zlog.Error("Failed to convert private key: %v", err)
 				goto enter_pk
 			}
 
-			log.Debug("success enter private key")
+			zlog.Debug("success enter private key")
 		}
 	}
 
@@ -107,17 +107,17 @@ func Command(ctx *cli.Context) error {
 	// Get passphrase sss or single
 	passphrase, err := makePassphrase()
 	if err != nil {
-		log.Error(fmt.Sprintf("Failed to make passphrase: %v", err))
+		zlog.Error(fmt.Sprintf("Failed to make passphrase: %v", err))
 		return err
 	}
 
 	account, err := ks.ImportECDSA(privateKey, passphrase)
 	if err != nil {
-		log.Error(fmt.Sprintf("Failed to import private key into keystore: %v", err))
+		zlog.Error(fmt.Sprintf("Failed to import private key into keystore: %v", err))
 		return err
 	}
 
-	log.Info(fmt.Sprintf("keystore file created for Ethereum address: %s", account.Address.Hex()))
+	zlog.Info(fmt.Sprintf("keystore file created for Ethereum address: %s", account.Address.Hex()))
 	return nil
 }
 
@@ -130,7 +130,7 @@ enter_split:
 	} else if splitN, err := strconv.Atoi(num); err != nil {
 		return "", err
 	} else if splitN >= 10 || splitN < 0 {
-		log.Warn("splitN is a positive integer less than 10.")
+		zlog.Warn("splitN is a positive integer less than 10.")
 		goto enter_split
 	} else {
 		var (
@@ -153,7 +153,7 @@ enter_split:
 }
 
 func sssPassphrase(splitN int) (string, error) {
-	log.Trace(fmt.Sprintf("generate sss (split count : %d)", splitN))
+	zlog.Trace(fmt.Sprintf("generate sss (split count : %d)", splitN))
 
 enter_threshold:
 	if num, err := prompt.Stdin.PromptInput(fmt.Sprintf("Enter the threshold, must be less than or equal to %v. <threshold>: ", splitN)); err != nil {
@@ -163,7 +163,7 @@ enter_threshold:
 	} else if threshold, err := strconv.Atoi(num); err != nil {
 		return "", nil
 	} else if threshold <= 1 || threshold > splitN {
-		log.Warn("threshold must be greater than 1 and less than splitN.")
+		zlog.Warn("threshold must be greater than 1 and less than splitN.")
 		goto enter_threshold
 	} else {
 		var (
@@ -178,18 +178,18 @@ enter_threshold:
 			return "", nil
 		} else {
 			if yes {
-				log.Trace("you chose that SSS key can be unlockable by single passphrase (128bit or 192bit or 256bit)")
+				zlog.Trace("you chose that SSS key can be unlockable by single passphrase (128bit or 192bit or 256bit)")
 				if passphrase, err = singlePassphrase(); err != nil {
 					return "", nil
 				} else {
 					if !(len(passphrase) == 16 || len(passphrase) == 24 || len(passphrase) == 32) {
-						log.Warn("passphrase size must be 128bit or 192bit or 256bit")
+						zlog.Warn("passphrase size must be 128bit or 192bit or 256bit")
 						goto confirm_passphrase
 					}
 				}
 
 			} else {
-				log.Trace("you chose that SSS key can be not unlockable by single passphrase")
+				zlog.Trace("you chose that SSS key can be not unlockable by single passphrase")
 				passphrase, err = randPassphrase(32)
 				if err != nil {
 					return "", err
@@ -201,7 +201,7 @@ enter_threshold:
 			return "", err
 		}
 
-		log.Debug(fmt.Sprintf("passphrase splited to %d (threshold=%d / single unlock = %v)", len(shares), threshold, yes))
+		zlog.Debug(fmt.Sprintf("passphrase splited to %d (threshold=%d / single unlock = %v)", len(shares), threshold, yes))
 
 		usbs := make(map[string]int)
 		usbIndex := make(map[byte]string)
@@ -222,7 +222,7 @@ enter_threshold:
 					if err := writeFile(usb, &ShareJson{Index: byte(i), Share: shares[byte(i)]}); err != nil {
 						return "", err
 					}
-					log.Trace(fmt.Sprintf("%d share of passphrase transfered to %s", i, usb))
+					zlog.Trace(fmt.Sprintf("%d share of passphrase transfered to %s", i, usb))
 				}
 			}
 		}
@@ -252,7 +252,7 @@ func randPassphrase(n int) (string, error) {
 
 func writeFile(dir string, shareJson *ShareJson) error {
 	if err := encrypt(shareJson); err != nil {
-		log.Error("share key json encrypt error, ", err)
+		zlog.Error("share key json encrypt error, ", err)
 		return err
 	}
 
